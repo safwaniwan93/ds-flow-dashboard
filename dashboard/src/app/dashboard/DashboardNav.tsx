@@ -60,65 +60,68 @@ export default function DashboardNav({ role }: { role: string }) {
       </nav>
 
       {/* Mobile Menu Toggle */}
-      <div className="lg:hidden ml-4">
+      <div className="lg:hidden ml-auto sm:ml-4">
         <Button 
           variant="ghost" 
           size="icon" 
           onClick={() => setIsOpen(true)}
-          className="rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200"
+          className="rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 h-11 w-11"
         >
           <Menu className="w-6 h-6" />
         </Button>
       </div>
 
-      {/* Off-canvas Overlay */}
-      {isOpen && (
+      {/* Off-canvas Overlay & Sidebar - Portal-like behavior by using high z-index and fixed positioning */}
+      <div 
+        className={`fixed inset-0 z-[1000] lg:hidden transition-opacity duration-300 ${isOpen ? "opacity-100 visible" : "opacity-0 invisible"}`}
+      >
+        {/* Backdrop */}
         <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] lg:hidden animate-in fade-in duration-300"
+          className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
           onClick={() => setIsOpen(false)}
         />
-      )}
 
-      {/* Off-canvas Sidebar */}
-      <div className={`fixed top-0 left-0 bottom-0 w-[80%] max-w-[320px] bg-white z-[101] lg:hidden transition-transform duration-300 ease-out transform ${isOpen ? "translate-x-0" : "-translate-x-full"} shadow-2xl flex flex-col`}>
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-          <div className="font-sans font-black text-xl flex items-center gap-1.5 text-primary tracking-tighter">
-            DS <span className="bg-primary text-white px-1.5 py-0.5 rounded rotate-3 italic">FLOW</span>
+        {/* Sidebar */}
+        <div className={`absolute top-0 left-0 bottom-0 w-[280px] bg-white shadow-2xl transition-transform duration-300 ease-in-out transform ${isOpen ? "translate-x-0" : "-translate-x-full"} flex flex-col`}>
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+            <div className="font-sans font-black text-xl flex items-center gap-1.5 text-primary tracking-tighter">
+              DS <span className="bg-primary text-white px-1.5 py-0.5 rounded rotate-3 italic">FLOW</span>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="rounded-full h-10 w-10">
+              <X className="w-5 h-5 text-slate-400" />
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="rounded-full">
-            <X className="w-5 h-5 text-slate-400" />
-          </Button>
-        </div>
 
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {links.map((link) => {
-            const Icon = link.icon
-            const isActive = pathname.startsWith(link.href)
-            return (
-              <Link 
-                key={link.href} 
-                href={link.href} 
-                className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-200 text-base font-bold ${
-                  isActive 
-                  ? "bg-primary text-white shadow-lg shadow-primary/20" 
-                  : "text-slate-500 hover:bg-slate-50"
-                }`}
-              >
-                <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-slate-400"}`} />
-                {link.label}
-              </Link>
-            )
-          })}
-        </nav>
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto mt-4">
+            {links.map((link) => {
+              const Icon = link.icon
+              const isActive = pathname.startsWith(link.href)
+              return (
+                <Link 
+                  key={link.href} 
+                  href={link.href} 
+                  className={`flex items-center gap-3 px-4 py-4 rounded-2xl transition-all duration-200 text-sm font-bold ${
+                    isActive 
+                    ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                    : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-slate-400"}`} />
+                  {link.label}
+                </Link>
+              )
+            })}
+          </nav>
 
-        <div className="p-4 border-t border-slate-100 mt-auto">
-          <Link 
-            href="/api/auth/signout" 
-            className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-red-600 font-bold hover:bg-red-50 transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            Logout Account
-          </Link>
+          <div className="p-6 border-t border-slate-100">
+            <Link 
+              href="/api/auth/signout" 
+              className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-red-600 font-bold hover:bg-red-50 transition-colors text-sm"
+            >
+              <LogOut className="w-5 h-5" />
+              Logout Account
+            </Link>
+          </div>
         </div>
       </div>
     </>
