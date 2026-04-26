@@ -243,10 +243,10 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
 
   // ============== EDIT VIEW ==============
   return (
-    <div className="flex flex-col md:flex-row gap-10 items-start relative">
+    <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start relative">
       
       {/* LEFT PANEL: CONFIGURATION FORM */}
-      <div className="w-full md:w-1/2 flex flex-col gap-8 pb-12">
+      <div className="w-full lg:w-1/2 flex flex-col gap-6 md:gap-8 pb-12">
         <div className="flex items-center justify-between pb-2 border-b">
           <div>
             <Button variant="link" className="p-0 h-auto text-slate-400 hover:text-slate-700 mb-2" onClick={() => setViewMode("LIST")}>
@@ -579,7 +579,7 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
       </div>
 
       {/* RIGHT PANEL: LIVE PREVIEW */}
-      <div className="w-full md:w-1/2 rounded-3xl overflow-y-auto sticky top-8 h-[calc(100vh-6rem)] shadow-[0_20px_50px_rgba(0,0,0,0.1)] bg-slate-50 border border-slate-200">
+      <div className="w-full lg:w-1/2 rounded-3xl overflow-y-auto lg:sticky lg:top-8 h-auto lg:h-[calc(100vh-6rem)] shadow-[0_20px_50px_rgba(0,0,0,0.1)] bg-slate-50 border border-slate-200">
         <div className="bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-2">
             <div className="flex gap-1.5 px-2">
