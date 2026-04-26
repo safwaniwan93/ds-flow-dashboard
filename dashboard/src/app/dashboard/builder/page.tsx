@@ -13,10 +13,9 @@ export default async function BuilderPage() {
 
   // Fetch sites connected by this user
   const sites = await prisma.site.findMany({
-    where: {
-      userId: session.user.id,
-      status: "CONNECTED",
-    },
+    where: session.user.role === "ADMIN" 
+      ? { status: "CONNECTED" } 
+      : { userId: session.user.id, status: "CONNECTED" },
     include: {
       products: true,
       promoSections: {
