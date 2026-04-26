@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(STAFF)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sites     Site[]
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+model Site {
+  id            String         @id @default(cuid())
+  domain        String?        @unique
+  connectionKey String?        @unique
+  siteToken     String?        @unique
+  status        SiteStatus     @default(PENDING)
+  lastSync      DateTime?
+  userId        String?
+  user          User?          @relation(fields: [userId], references: [id])
+  products      Product[]
+  promoSections PromoSection[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+enum SiteStatus {
+  PENDING
+  CONNECTED
+}
+
+model Product {
+  id           String        @id @default(cuid())
+  wcProductId  String
+  sku          String?
+  name         String
+  price        String?       // Kept for backward compatibility
+  regularPrice String?
+  activePrice  String?
+  stockStatus  String?
+  image        String?
+  siteId       String
+  site         Site          @relation(fields: [siteId], references: [id])
+  productCards ProductCard[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([siteId, wcProductId])
+}
+
+model PromoSection {
+  id           String        @id @default(cuid())
+  siteId       String
+  site         Site          @relation(fields: [siteId], references: [id])
+  slotKey      String
+  labelText    String?
+  titleLine1   String?
+  titleLine2   String?
+  description  String?
+  themeVariant String        @default("gold")
+  status       PublishStatus @default(DRAFT)
+  cards        ProductCard[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([siteId, slotKey])
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model ProductCard {
+  id             String       @id @default(cuid())
+  promoSectionId String
+  promoSection   PromoSection @relation(fields: [promoSectionId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product      @relation(fields: [productId], references: [id])
+  cardTitle      String?
+  topLabel       String?
+  promoChip      String?
+  miniOfferText  String?
+  posterOverride String?
+  priceOverride  String?
+  regularPriceOverride String?
+  featureList    String       @default("[]") // JSON string of features
+  buttonText     String?      @default("Beli Sekarang")
+  visible        Boolean      @default(true)
+  sortOrder      Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
