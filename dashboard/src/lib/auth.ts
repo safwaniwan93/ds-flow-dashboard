@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { prisma } from "./prisma";
+import { logAudit } from "./logger";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -26,6 +27,10 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        if (!user.isActive) {
+          return null;
+        }
+
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           user.password
@@ -34,6 +39,12 @@ export const authOptions: NextAuthOptions = {
         if (!isPasswordValid) {
           return null;
         }
+
+        await logAudit({
+          action: "USER_LOGIN",
+          userId: user.id,
+          details: { email: user.email, role: user.role }
+        });
 
         return {
           id: user.id,

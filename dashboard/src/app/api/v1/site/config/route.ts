@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function GET(req: Request) {
   try {
@@ -8,14 +10,21 @@ export async function GET(req: Request) {
     }
 
     const siteToken = authHeader.split(" ")[1];
+    const siteTokenHash = crypto.createHash('sha256').update(siteToken).digest('hex');
 
     // Find the site
     const site = await prisma.site.findUnique({
-      where: { siteToken },
+      where: { siteTokenHash },
     });
 
     if (!site || site.status !== "CONNECTED") {
       return Response.json({ error: "Unauthorized or site not connected" }, { status: 401 });
+    }
+
+    // Rate limit by site ID: 5000 requests per hour (very generous for frontend config)
+    const limiter = await rateLimit(site.id, "config_fetch", 5000, 60 * 60 * 1000);
+    if (!limiter.success) {
+      return Response.json({ error: "Rate limit exceeded." }, { status: 429 });
     }
 
     // Fetch published promo sections and their visible cards

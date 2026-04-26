@@ -11,6 +11,7 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(STAFF)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   sites     Site[]
@@ -22,18 +23,20 @@ enum Role {
 }
 
 model Site {
-  id            String         @id @default(cuid())
-  domain        String?        @unique
-  connectionKey String?        @unique
-  siteToken     String?        @unique
-  status        SiteStatus     @default(PENDING)
-  lastSync      DateTime?
-  userId        String?
-  user          User?          @relation(fields: [userId], references: [id])
-  products      Product[]
-  promoSections PromoSection[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                     String         @id @default(cuid())
+  domain                 String?        @unique
+  connectionKeyHash      String?        @unique
+  connectionKeyExpiresAt DateTime?
+  connectionKeyUsedAt    DateTime?
+  siteTokenHash          String?        @unique
+  status                 SiteStatus     @default(PENDING)
+  lastSync               DateTime?
+  userId                 String?
+  user                   User?          @relation(fields: [userId], references: [id])
+  products               Product[]
+  promoSections          PromoSection[]
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
 }
 
 enum SiteStatus {
@@ -102,4 +105,25 @@ model ProductCard {
   sortOrder      Int          @default(0)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  userId    String?
+  siteId    String?
+  details   String?  // JSON string
+  createdAt DateTime @default(now())
+}
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  identifier String
+  endpoint  String
+  count     Int      @default(1)
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([identifier, endpoint])
 }

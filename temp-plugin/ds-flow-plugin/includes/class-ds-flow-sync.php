@@ -35,8 +35,9 @@ class DS_Flow_Sync {
     public function handle_webhook( WP_REST_Request $request ) {
         $auth_header = $request->get_header('authorization');
         $site_token = get_option( 'ds_flow_site_token' );
+        $provided_hash = str_replace('Bearer ', '', $auth_header);
         
-        if ( ! $site_token || ! $auth_header || strpos($auth_header, $site_token) === false ) {
+        if ( ! $site_token || ! $auth_header || hash('sha256', $site_token) !== $provided_hash ) {
             return new WP_Error( 'unauthorized', 'Invalid or missing token', array( 'status' => 401 ) );
         }
 

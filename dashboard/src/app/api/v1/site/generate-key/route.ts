@@ -12,12 +12,17 @@ export async function POST(req: Request) {
     }
 
     // Generate a random connection key
-    const connectionKey = crypto.randomBytes(16).toString("hex");
+    const connectionKey = crypto.randomBytes(32).toString("hex");
+    const connectionKeyHash = crypto.createHash('sha256').update(connectionKey).digest('hex');
+
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 2);
 
     // Create a new Site record in PENDING state
     const site = await prisma.site.create({
       data: {
-        connectionKey,
+        connectionKeyHash,
+        connectionKeyExpiresAt: expiresAt,
         status: "PENDING",
         userId: session.user.id,
       },

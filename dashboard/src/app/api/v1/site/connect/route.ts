@@ -1,8 +1,20 @@
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import { headers } from "next/headers";
+import { rateLimit } from "@/lib/rate-limit";
+import { logAudit } from "@/lib/logger";
 
 export async function POST(req: Request) {
   try {
+    const headerList = await headers();
+    const ip = headerList.get("x-forwarded-for") || "unknown";
+    
+    // Rate limit: 5 attempts per 15 minutes for site connection
+    const limiter = await rateLimit(ip, "site_connect", 5, 15 * 60 * 1000);
+    if (!limiter.success) {
+      return Response.json({ error: "Too many attempts. Please try again later." }, { status: 429 });
+    }
+
     const body = await req.json();
     const { connectionKey, domain } = body;
 
@@ -10,15 +22,25 @@ export async function POST(req: Request) {
       return Response.json({ error: "Missing connectionKey or domain" }, { status: 400 });
     }
 
+    const connectionKeyHash = crypto.createHash('sha256').update(connectionKey).digest('hex');
+
     // Find the pending site with this connection key
     const site = await prisma.site.findUnique({
       where: {
-        connectionKey: connectionKey,
+        connectionKeyHash: connectionKeyHash,
       },
     });
 
     if (!site || site.status !== "PENDING") {
-      return Response.json({ error: "Invalid or expired connection key" }, { status: 400 });
+      return Response.json({ error: "Invalid connection key" }, { status: 400 });
+    }
+
+    if (site.connectionKeyUsedAt !== null) {
+      return Response.json({ error: "Connection key has already been used" }, { status: 400 });
+    }
+
+    if (site.connectionKeyExpiresAt && site.connectionKeyExpiresAt < new Date()) {
+      return Response.json({ error: "Connection key has expired" }, { status: 400 });
     }
 
     // Check if domain is already connected
@@ -35,14 +57,15 @@ export async function POST(req: Request) {
 
     // Generate a permanent site token
     const siteToken = crypto.randomBytes(32).toString("hex");
+    const siteTokenHash = crypto.createHash('sha256').update(siteToken).digest('hex');
 
     // Update the site record
     const updatedSite = await prisma.site.update({
       where: { id: site.id },
       data: {
         domain,
-        siteToken,
-        connectionKey: null, // invalidate the key
+        siteTokenHash,
+        connectionKeyUsedAt: new Date(),
         status: "CONNECTED",
       },
     });
@@ -68,6 +91,13 @@ export async function POST(req: Request) {
         },
       ],
       skipDuplicates: true,
+    });
+
+    // We only return the plaintext token ONCE
+    await logAudit({
+      action: "SITE_CONNECTED",
+      siteId: updatedSite.id,
+      details: { domain }
     });
 
     return Response.json({ siteToken, message: "Site connected successfully" });

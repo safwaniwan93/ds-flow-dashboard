@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
+import { logAudit } from "@/lib/logger";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
@@ -8,14 +11,21 @@ export async function POST(req: Request) {
     }
 
     const siteToken = authHeader.split(" ")[1];
+    const siteTokenHash = crypto.createHash('sha256').update(siteToken).digest('hex');
 
     // Find the site
     const site = await prisma.site.findUnique({
-      where: { siteToken },
+      where: { siteTokenHash },
     });
 
     if (!site || site.status !== "CONNECTED") {
       return Response.json({ error: "Unauthorized or site not connected" }, { status: 401 });
+    }
+
+    // Rate limit by site ID: 100 syncs per hour
+    const limiter = await rateLimit(site.id, "product_sync", 100, 60 * 60 * 1000);
+    if (!limiter.success) {
+      return Response.json({ error: "Rate limit exceeded for product sync." }, { status: 429 });
     }
 
     const body = await req.json();
@@ -64,6 +74,12 @@ export async function POST(req: Request) {
     await prisma.site.update({
       where: { id: site.id },
       data: { lastSync: new Date() },
+    });
+
+    await logAudit({
+      action: "PRODUCTS_SYNCED",
+      siteId: site.id,
+      details: { productCount: products.length }
     });
 
     return Response.json({ success: true, message: "Products synced successfully" });

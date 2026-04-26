@@ -1,6 +1,7 @@
 # DS Flow Dashboard
 
 This is the central dashboard for the DS Flow WordPress Plugin system.
+For detailed security and architecture information, see [ARCHITECTURE_AUDIT.md](./ARCHITECTURE_AUDIT.md).
 
 ## Environment Variables
 
