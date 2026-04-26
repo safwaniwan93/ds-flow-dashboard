@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronDown, ChevronUp, Plus, Trash2, Edit } from "lucide-react"
+import { ChevronDown, ChevronUp, Plus, Trash2, Edit, Copy } from "lucide-react"
 
 import { savePromoConfig, deletePromoConfig } from "@/app/actions/builder"
 
@@ -145,6 +145,17 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
       alert("Error: " + res.error)
     }
     setIsSaving(false)
+  }
+
+  const handleDuplicate = (card: any) => {
+    const newId = `card-${Date.now()}`
+    const duplicatedCard = {
+      ...card,
+      id: newId,
+      cardTitle: `${card.cardTitle} (Copy)`
+    }
+    setCards([...cards, duplicatedCard])
+    setExpandedCardId(newId)
   }
 
   // ============== LIST VIEW ==============
@@ -410,6 +421,17 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
                   {isExpanded && (
                     <div className="p-6 border-t border-slate-100 space-y-5 bg-white relative">
                       <div className="absolute top-6 right-6 flex gap-2 z-10">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-7 text-xs flex items-center gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDuplicate(card)
+                          }}
+                        >
+                          <Copy className="w-3 h-3" /> Duplicate
+                        </Button>
                         <Button 
                           size="sm" 
                           variant="outline" 
