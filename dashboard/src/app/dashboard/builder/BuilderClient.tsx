@@ -557,17 +557,22 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
       </div>
 
       {/* RIGHT PANEL: LIVE PREVIEW */}
-      <div className="w-full md:w-1/2 rounded-3xl p-6 md:p-10 overflow-y-auto sticky top-8 h-[calc(100vh-6rem)] shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white border border-slate-100">
-        <div className="flex items-center justify-between mb-8">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Live Preview</h3>
-          <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-            <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-            <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+      <div className="w-full md:w-1/2 rounded-3xl overflow-y-auto sticky top-8 h-[calc(100vh-6rem)] shadow-[0_20px_50px_rgba(0,0,0,0.1)] bg-slate-50 border border-slate-200">
+        <div className="bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1.5 px-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+            </div>
+            <div className="ml-4 bg-slate-100 rounded-lg px-4 py-1.5 text-[10px] font-mono text-slate-500 flex items-center gap-2">
+              <span className="opacity-50">https://</span>{activeSite?.domain || "your-website.com"}<span className="opacity-50">/promo</span>
+            </div>
           </div>
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-bold px-3 py-1">LIVE PREVIEW</Badge>
         </div>
         
-        <div className="p-8 md:p-12 rounded-[2.5rem] border border-slate-100 bg-[#f8fafc] shadow-sm font-sans transition-all duration-500">
+        <div className="p-4 md:p-8">
           
           <div className="text-center mb-16">
             {section.labelText && (
@@ -580,7 +585,7 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
             <p className="text-slate-600 max-w-xl mx-auto leading-relaxed text-lg font-normal">{section.description}</p>
           </div>
  
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="flex flex-col gap-10 max-w-[400px] mx-auto">
             {cards.map(card => {
               const product = availableProducts.find((p: any) => p.id === card.productId)
               
