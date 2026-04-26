@@ -196,45 +196,73 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
               <Button variant="link" onClick={handleCreateNew}>Create your first promo</Button>
             </div>
           ) : (
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold">
-                <tr>
-                  <th className="px-6 py-4">Slot Key / Shortcode</th>
-                  <th className="px-6 py-4">Title</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Last Updated</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              {/* MOBILE VIEW: CARD LIST */}
+              <div className="md:hidden divide-y divide-slate-100">
                 {existingPromos.map((promo: any) => (
-                  <tr key={promo.id} className="border-b border-slate-50 hover:bg-slate-50/50">
-                    <td className="px-6 py-4">
-                      <code className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-1 rounded">
-                        [ds_flow slot="{promo.slotKey}"]
-                      </code>
-                    </td>
-                    <td className="px-6 py-4 font-medium text-slate-900">{promo.titleLine1 || "Untitled"}</td>
-                    <td className="px-6 py-4">
-                      <Badge variant="outline" className={promo.status === 'PUBLISHED' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-100 text-slate-600'}>
-                        {promo.status}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-slate-500">
-                      {new Date(promo.updatedAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-right space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEdit(promo)}>
-                        <Edit className="w-4 h-4 mr-1" /> Edit
+                  <div key={promo.id} className="p-4 flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-slate-900 truncate">{promo.titleLine1 || "Untitled"}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${promo.status === 'PUBLISHED' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-100 text-slate-600'}`}>
+                          {promo.status}
+                        </Badge>
+                        <span className="text-[10px] text-slate-400 font-mono">[ds_flow slot="{promo.slotKey}"]</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" className="text-primary h-9 w-9 rounded-lg" onClick={() => handleEdit(promo)}>
+                        <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(promo.id)}>
+                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50 h-9 w-9 rounded-lg" onClick={() => handleDelete(promo.id)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+
+              {/* DESKTOP VIEW: TABLE */}
+              <table className="w-full text-sm text-left hidden md:table">
+                <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold">
+                  <tr>
+                    <th className="px-6 py-4">Slot Key / Shortcode</th>
+                    <th className="px-6 py-4">Title</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Last Updated</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {existingPromos.map((promo: any) => (
+                    <tr key={promo.id} className="border-b border-slate-50 hover:bg-slate-50/50">
+                      <td className="px-6 py-4">
+                        <code className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-1 rounded">
+                          [ds_flow slot="{promo.slotKey}"]
+                        </code>
+                      </td>
+                      <td className="px-6 py-4 font-medium text-slate-900">{promo.titleLine1 || "Untitled"}</td>
+                      <td className="px-6 py-4">
+                        <Badge variant="outline" className={promo.status === 'PUBLISHED' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-100 text-slate-600'}>
+                          {promo.status}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-slate-500">
+                        {new Date(promo.updatedAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-right space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(promo)}>
+                          <Edit className="w-4 h-4 mr-1" /> Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(promo.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
           )}
         </div>
       </div>
