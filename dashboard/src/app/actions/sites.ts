@@ -52,9 +52,13 @@ export async function deleteSite(siteId: string) {
   try {
     const siteIdToSafeDelete = siteId;
 
-    await prisma.site.delete({
-      where: { id: siteIdToSafeDelete }
-    })
+    // Manual cleanup for relations to avoid FK constraint issues if DB is out of sync with Prisma
+    await prisma.$transaction([
+      prisma.productCard.deleteMany({ where: { promoSection: { siteId: siteIdToSafeDelete } } }),
+      prisma.promoSection.deleteMany({ where: { siteId: siteIdToSafeDelete } }),
+      prisma.product.deleteMany({ where: { siteId: siteIdToSafeDelete } }),
+      prisma.site.delete({ where: { id: siteIdToSafeDelete } })
+    ]);
 
     await logAudit({
       action: "SITE_DELETED",

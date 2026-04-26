@@ -86,7 +86,7 @@ export default function SiteActions({ siteId, domain }: { siteId: string; domain
               disabled={loading} 
               className="rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold px-8 py-6 shadow-lg shadow-red-200/50 transition-all active:scale-95"
             >
-              {loading ? "Disconnecting..." : "Yes, Disconnect"}
+              {loading ? "Disconnecting..." : "Disconnect"}
             </Button>
           </DialogFooter>
         </DialogContent>
