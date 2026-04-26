@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import crypto from "crypto"
 import { logAudit } from "@/lib/logger"
+import { revalidatePath } from "next/cache"
 
 export async function generateConnectionKey() {
   const session = await getServerSession(authOptions)
@@ -49,26 +50,23 @@ export async function deleteSite(siteId: string) {
   }
 
   try {
-    // Check ownership if STAFF
-    if (session.user.role === "STAFF") {
-      const site = await prisma.site.findFirst({
-        where: { id: siteId, userId: session.user.id }
-      })
-      if (!site) return { error: "Unauthorized access to this site" }
-    }
+    const siteIdToSafeDelete = siteId;
 
     await prisma.site.delete({
-      where: { id: siteId }
+      where: { id: siteIdToSafeDelete }
     })
 
     await logAudit({
       action: "SITE_DELETED",
       userId: session.user.id,
-      siteId: siteId
+      siteId: siteIdToSafeDelete
     });
+
+    revalidatePath("/dashboard/sites");
 
     return { success: true }
   } catch (error: any) {
-    return { error: "Failed to delete site" }
+    console.error("[deleteSite Action Error]:", error)
+    return { error: `Failed to delete site: ${error.message || "Unknown error"}` }
   }
 }

@@ -15,13 +15,20 @@ export default function SiteActions({ siteId, domain }: { siteId: string; domain
   const [showDelete, setShowDelete] = useState(false)
 
   async function handleDelete() {
-    setLoading(true)
-    const res = await deleteSite(siteId)
-    if (res.success) {
-      router.refresh()
+    try {
+      setLoading(true)
+      const res = await deleteSite(siteId)
+      if (res.success) {
+        setShowDelete(false)
+        router.refresh()
+      } else {
+        alert(res.error || "Failed to disconnect site")
+      }
+    } catch (err) {
+      alert("An unexpected error occurred")
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
-    setShowDelete(false)
   }
 
   return (
@@ -65,7 +72,7 @@ export default function SiteActions({ siteId, domain }: { siteId: string; domain
         <DialogContent className="rounded-3xl border-slate-200">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Disconnect Site?</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-slate-600 font-medium leading-relaxed">
               This will instantly invalidate the site token and stop all synchronization. All product data and promo configs for this site will be permanently deleted.
             </DialogDescription>
           </DialogHeader>
@@ -73,7 +80,12 @@ export default function SiteActions({ siteId, domain }: { siteId: string; domain
             <Button variant="ghost" onClick={() => setShowDelete(false)} disabled={loading} className="rounded-xl">
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={loading} className="rounded-xl bg-red-600 hover:bg-red-700">
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete} 
+              disabled={loading} 
+              className="rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold px-8 py-6 shadow-lg shadow-red-200/50 transition-all active:scale-95"
+            >
               {loading ? "Disconnecting..." : "Yes, Disconnect"}
             </Button>
           </DialogFooter>

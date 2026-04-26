@@ -55,7 +55,7 @@ model Product {
   stockStatus  String?
   image        String?
   siteId       String
-  site         Site          @relation(fields: [siteId], references: [id])
+  site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
   productCards ProductCard[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -66,7 +66,7 @@ model Product {
 model PromoSection {
   id           String        @id @default(cuid())
   siteId       String
-  site         Site          @relation(fields: [siteId], references: [id])
+  site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
   slotKey      String
   labelText    String?
   titleLine1   String?
@@ -91,7 +91,7 @@ model ProductCard {
   promoSectionId String
   promoSection   PromoSection @relation(fields: [promoSectionId], references: [id], onDelete: Cascade)
   productId      String
-  product        Product      @relation(fields: [productId], references: [id])
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
   cardTitle      String?
   topLabel       String?
   promoChip      String?
