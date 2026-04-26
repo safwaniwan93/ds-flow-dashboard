@@ -619,15 +619,15 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
                   </div>
  
                   {/* Image Block - FIXED FIT */}
-                  <div className="relative w-full h-72 bg-[#f8fafc] border-b border-slate-50 flex items-center justify-center p-6">
+                  <div className="relative w-full h-80 bg-[#f8fafc] border-b border-slate-50 flex items-center justify-center p-0 overflow-hidden">
                     {(card.posterOverride || product?.image) ? (
                       <img 
                         src={card.posterOverride || product?.image} 
                         alt="Product" 
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                       />
                     ) : (
-                      <span className="text-slate-300 text-xs font-black tracking-widest">NO IMAGE SOURCE</span>
+                      <span className="text-slate-300 text-xs font-black tracking-widest uppercase">No Image</span>
                     )}
                   </div>
  
@@ -637,7 +637,7 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
                     <div className="mb-8 pb-8 border-b border-slate-50 flex flex-col gap-2">
                       <div className="flex items-baseline gap-1.5 leading-none">
                         <span className="text-base font-black text-[#154200] mb-1">RM</span>
-                        <span className="text-5xl font-black text-[#154200] tracking-tighter leading-[0.85]">{activePriceRaw}</span>
+                        <span className="text-4xl font-black text-[#154200] tracking-tighter leading-[0.85]">{activePriceRaw}</span>
                         {showStrikethrough && (
                           <span className="text-base text-slate-400 line-through font-medium ml-2">RM{regularPriceRaw}</span>
                         )}
