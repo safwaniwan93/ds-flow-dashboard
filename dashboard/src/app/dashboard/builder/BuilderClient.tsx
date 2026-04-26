@@ -31,7 +31,7 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
     titleLine1: "Pilih Pakej Anda",
     titleLine2: "PAKEJ PROMOSI TERKINI",
     description: "Pakej terbaik untuk kesihatan sendi & saraf anda. Tersedia sepanjang tahun.",
-    theme: "green",
+    theme: "#154200",
   })
 
   // Cards State
@@ -52,7 +52,7 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
       titleLine1: "Pilih Pakej Anda",
       titleLine2: "PAKEJ PROMOSI TERKINI",
       description: "Pakej terbaik untuk kesihatan sendi & saraf anda. Tersedia sepanjang tahun.",
-      theme: "green",
+      theme: "#154200",
     })
     setCards([
       {
@@ -567,21 +567,20 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
           </div>
         </div>
         
-        {/* Rendered Preview mimicking WP shortcode output */}
-        <div className="p-8 md:p-12 rounded-[2rem] border border-slate-100 bg-[#f8fbf8] shadow-sm font-sans transition-all duration-500">
+        <div className="p-8 md:p-12 rounded-[2.5rem] border border-slate-100 bg-[#f8fafc] shadow-sm font-sans transition-all duration-500">
           
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             {section.labelText && (
-              <span className="inline-block px-4 py-1.5 bg-[#e6f4ea] border border-[#bbf7d0] text-[#166534] rounded-full text-[10px] font-bold uppercase tracking-widest mb-6">
+              <span className="inline-block px-5 py-2 bg-[#f0fdf4] border border-[#dcfce7] text-[#154200] rounded-full text-[11px] font-bold uppercase tracking-[0.15em] mb-6">
                 {section.labelText}
               </span>
             )}
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#1e293b] mb-3 tracking-tight">{section.titleLine1}</h2>
-            <h3 className="text-xl md:text-2xl font-bold text-[#1a7f37] mb-6 uppercase tracking-wide">{section.titleLine2}</h3>
-            <p className="text-slate-500 max-w-lg mx-auto leading-relaxed text-sm">{section.description}</p>
+            <h2 className="text-4xl md:text-5xl font-serif font-black text-[#0f172a] mb-4 tracking-tight leading-[1.1]">{section.titleLine1}</h2>
+            <h3 className="text-2xl md:text-3xl font-black text-[#154200] mb-8 uppercase tracking-widest">{section.titleLine2}</h3>
+            <p className="text-slate-600 max-w-xl mx-auto leading-relaxed text-lg font-normal">{section.description}</p>
           </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+ 
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             {cards.map(card => {
               const product = availableProducts.find((p: any) => p.id === card.productId)
               
@@ -593,75 +592,75 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
               
               const showStrikethrough = regularPrice > activePrice
               const savingsAmount = showStrikethrough ? (regularPrice - activePrice) : 0
-
+ 
               return (
-                <div key={card.id} className={`bg-white rounded-[1.5rem] overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-200 flex flex-col transition-all duration-300 ${!card.visible && 'opacity-40 grayscale'}`}>
+                <div key={card.id} className={`bg-white rounded-[2rem] overflow-hidden shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-100 flex flex-col transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_30px_60px_-12px_rgba(0,0,0,0.15)] ${!card.visible && 'opacity-40 grayscale'}`}>
                   
-                  {/* Top Green Block */}
-                  <div className="relative bg-[#1a7f37] text-white p-6 text-center flex flex-col items-center justify-center min-h-[140px]">
+                  {/* Top Premium Block */}
+                  <div className="relative bg-[#154200] bg-gradient-to-br from-[#1a5200] to-[#154200] text-white p-10 text-center flex flex-col items-center justify-center min-h-[160px]">
                     {card.promoChip && (
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-[#fbbf24] text-[#78350f] px-3 py-1 text-[10px] font-bold rounded-b-lg shadow-sm whitespace-nowrap">
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#fbbf24] to-[#f59e0b] text-[#451a03] px-5 py-1.5 text-[10px] font-black rounded-b-xl shadow-lg whitespace-nowrap uppercase tracking-wider">
                         {card.promoChip}
                       </div>
                     )}
                     {card.topLabel && (
-                      <div className="text-[10px] font-bold text-[#a7f3d0] tracking-widest uppercase mb-2 mt-4">
+                      <div className="text-[10px] font-bold text-[#86efac] tracking-[0.2em] uppercase mb-3 mt-4 opacity-90">
                         {card.topLabel}
                       </div>
                     )}
-                    <h4 className="text-xl font-bold font-serif mb-3 leading-tight">
+                    <h4 className="text-2xl font-black font-serif mb-4 leading-tight tracking-tight">
                       {card.cardTitle || product?.name || "Product Name"}
                     </h4>
                     {card.miniOfferText && (
-                      <div className="border border-[#4ade80] text-[#dcfce7] rounded-full px-4 py-1 text-xs font-bold whitespace-nowrap">
+                      <div className="bg-white/10 border border-white/20 backdrop-blur-sm text-white rounded-full px-5 py-1.5 text-sm font-semibold whitespace-nowrap">
                         {card.miniOfferText}
                       </div>
                     )}
                   </div>
-
-                  {/* Image Block */}
-                  <div className="relative w-full h-48 bg-white border-b border-slate-100 flex items-center justify-center p-0">
+ 
+                  {/* Image Block - FIXED FIT */}
+                  <div className="relative w-full h-72 bg-[#f8fafc] border-b border-slate-50 flex items-center justify-center p-6">
                     {(card.posterOverride || product?.image) ? (
                       <img 
                         src={card.posterOverride || product?.image} 
                         alt="Product" 
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     ) : (
-                      <span className="text-slate-300 text-xs font-bold">NO IMAGE</span>
+                      <span className="text-slate-300 text-xs font-black tracking-widest">NO IMAGE SOURCE</span>
                     )}
                   </div>
-
+ 
                   {/* Content & Price Block */}
-                  <div className="p-6 flex flex-col flex-grow w-full z-10 relative bg-white">
+                  <div className="p-8 flex flex-col flex-grow w-full z-10 relative bg-white">
                     {/* Price Block */}
-                    <div className="mb-6 pb-6 border-b border-slate-100">
-                      <div className="flex items-end gap-1 mb-2 leading-none">
-                        <span className="text-xs font-bold text-[#1a7f37] mb-1">RM</span>
-                        <span className="text-4xl font-black text-[#1a7f37] tracking-tighter leading-[0.9]">{activePriceRaw}</span>
+                    <div className="mb-8 pb-8 border-b border-slate-50 flex flex-col gap-2">
+                      <div className="flex items-baseline gap-1.5 leading-none">
+                        <span className="text-base font-black text-[#154200] mb-1">RM</span>
+                        <span className="text-5xl font-black text-[#154200] tracking-tighter leading-[0.85]">{activePriceRaw}</span>
                         {showStrikethrough && (
-                          <span className="text-sm text-slate-400 line-through font-medium ml-2 mb-1">RM{regularPriceRaw}</span>
+                          <span className="text-base text-slate-400 line-through font-medium ml-2">RM{regularPriceRaw}</span>
                         )}
                       </div>
                       {showStrikethrough && (
-                        <div className="inline-block bg-[#f0fdf4] border border-[#bbf7d0] text-[#166534] text-[10px] font-bold px-2 py-1 rounded">
+                        <div className="inline-flex items-center bg-[#154200] text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-sm w-fit">
                           Jimat RM{savingsAmount}
                         </div>
                       )}
                     </div>
-
+ 
                     {/* Features */}
-                    <ul className="space-y-3 mb-6 flex-grow">
+                    <ul className="space-y-4 mb-8 flex-grow">
                       {(card.featureList || "").split('\n').filter(Boolean).map((feature: string, i: number) => {
                         const hasFree = feature.includes('[FREE]');
                         const cleanFeature = feature.replace('[FREE]', '').replace('✓', '').trim();
                         
                         return (
-                          <li key={i} className="text-xs text-[#4b5563] flex items-start gap-2">
-                            <span className="text-slate-400 font-bold mt-0.5">✓</span>
-                            <span className="font-medium leading-relaxed flex-1 flex flex-wrap gap-1 items-center">
+                          <li key={i} className="text-sm text-[#334155] flex items-start gap-3 font-medium">
+                            <span className="text-[#154200] font-black text-base mt-0">✓</span>
+                            <span className="leading-relaxed flex-1 flex flex-wrap gap-1.5 items-center">
                               {hasFree && (
-                                <span className="bg-[#1a7f37] text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                <span className="bg-gradient-to-r from-[#154200] to-[#1a5200] text-white text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-wider shadow-sm">
                                   FREE
                                 </span>
                               )}
@@ -671,9 +670,9 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
                         )
                       })}
                     </ul>
-
+ 
                     {/* CTA Button */}
-                    <div className="w-full mt-auto bg-[#1a7f37] text-white text-center py-3 rounded-lg text-sm font-bold tracking-wide hover:bg-[#166534] transition-all duration-300 shadow-md cursor-pointer hover:shadow-lg flex justify-center items-center gap-2">
+                    <div className="w-full mt-auto bg-gradient-to-br from-[#154200] to-[#1a5200] text-white text-center py-5 rounded-2xl text-base font-bold tracking-wide hover:from-[#1a5200] hover:to-[#154200] transition-all duration-300 shadow-[0_10px_20px_-5px_rgba(21,66,0,0.4)] cursor-pointer hover:shadow-[0_15px_30px_-5px_rgba(21,66,0,0.5)] flex justify-center items-center gap-2 hover:-translate-y-1 active:translate-y-0">
                       {card.buttonText || "Beli Sekarang 🛒"}
                     </div>
                   </div>
@@ -681,7 +680,7 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
               )
             })}
           </div>
-
+ 
         </div>
       </div>
 
