@@ -31,14 +31,14 @@ class DS_Flow_Shortcode {
             .ds-flow-card:hover { transform: translateY(-8px); box-shadow: 0 30px 60px -12px rgba(0,0,0,0.12); border-color: #e2e8f0; }
             
             /* Premium Header Block */
-            .ds-flow-card-head { background-color: #154200; background-image: radial-gradient(circle at top right, #1a5200, #154200); position: relative; padding: 40px 30px; text-align: center; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 140px; z-index: 10; }
+            .ds-flow-card-head { background-color: #154200; background-image: radial-gradient(circle at top right, #1a5200, #154200); position: relative; padding: 20px; text-align: center; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100px; z-index: 10; }
             .ds-flow-promo-chip { position: absolute; top: 0; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #451a03; font-size: 11px; font-weight: 800; padding: 6px 20px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.05em; }
-            .ds-flow-top-label { font-size: 11px; font-weight: 700; color: #86efac; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 12px; margin-top: 10px; opacity: 0.9; }
-            .ds-flow-card-title { font-family: 'Georgia', serif; font-size: 32px; font-weight: 800; margin: 0 0 16px 0; line-height: 1.1; color: #ffffff; letter-spacing: -0.01em; }
-            .ds-flow-mini-offer { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px); color: #ffffff; border-radius: 100px; padding: 6px 20px; font-size: 14px; font-weight: 600; display: inline-block; white-space: nowrap; }
+            .ds-flow-top-label { font-size: 11px; font-weight: 700; color: #86efac; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 6px; margin-top: 10px; opacity: 0.9; }
+            .ds-flow-card-title { font-family: 'Georgia', serif; font-size: 28px; font-weight: 800; margin: 0 0 10px 0; line-height: 1.1; color: #ffffff; letter-spacing: -0.01em; }
+            .ds-flow-mini-offer { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px); color: #ffffff; border-radius: 100px; padding: 6px 20px; font-size: 13px; font-weight: 600; display: inline-block; white-space: nowrap; }
             
-            /* Image Block - FIXED FIT */
-            .ds-flow-card-image-wrap { width: 100%; height: 320px; background-color: #f8fafc; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; overflow: hidden; position: relative; }
+            /* Image Block - 1:1 ASPECT RATIO */
+            .ds-flow-card-image-wrap { width: 100%; aspect-ratio: 1 / 1; background-color: #f8fafc; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; overflow: hidden; position: relative; }
             .ds-flow-card-image { width: 100%; height: 100%; object-fit: cover; display: block; margin: 0; padding: 0; box-sizing: border-box; transition: transform 0.6s ease; }
             .ds-flow-card:hover .ds-flow-card-image { transform: scale(1.05); }
             

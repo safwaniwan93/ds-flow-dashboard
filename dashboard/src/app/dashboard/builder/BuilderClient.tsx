@@ -597,29 +597,29 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
                 <div key={card.id} className={`bg-white rounded-[2rem] overflow-hidden shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-100 flex flex-col transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_30px_60px_-12px_rgba(0,0,0,0.15)] ${!card.visible && 'opacity-40 grayscale'}`}>
                   
                   {/* Top Premium Block */}
-                  <div className="relative bg-[#154200] bg-gradient-to-br from-[#1a5200] to-[#154200] text-white p-10 text-center flex flex-col items-center justify-center min-h-[160px]">
+                  <div className="relative bg-[#154200] bg-gradient-to-br from-[#1a5200] to-[#154200] text-white p-6 text-center flex flex-col items-center justify-center min-h-[100px]">
                     {card.promoChip && (
                       <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#fbbf24] to-[#f59e0b] text-[#451a03] px-5 py-1.5 text-[10px] font-black rounded-b-xl shadow-lg whitespace-nowrap uppercase tracking-wider">
                         {card.promoChip}
                       </div>
                     )}
                     {card.topLabel && (
-                      <div className="text-[10px] font-bold text-[#86efac] tracking-[0.2em] uppercase mb-3 mt-4 opacity-90">
+                      <div className="text-[10px] font-bold text-[#86efac] tracking-[0.2em] uppercase mb-1.5 mt-4 opacity-90">
                         {card.topLabel}
                       </div>
                     )}
-                    <h4 className="text-2xl font-black font-serif mb-4 leading-tight tracking-tight">
+                    <h4 className="text-xl font-black font-serif mb-2 leading-tight tracking-tight">
                       {card.cardTitle || product?.name || "Product Name"}
                     </h4>
                     {card.miniOfferText && (
-                      <div className="bg-white/10 border border-white/20 backdrop-blur-sm text-white rounded-full px-5 py-1.5 text-sm font-semibold whitespace-nowrap">
+                      <div className="bg-white/10 border border-white/20 backdrop-blur-sm text-white rounded-full px-5 py-1.5 text-xs font-semibold whitespace-nowrap">
                         {card.miniOfferText}
                       </div>
                     )}
                   </div>
  
-                  {/* Image Block - FIXED FIT */}
-                  <div className="relative w-full h-80 bg-[#f8fafc] border-b border-slate-50 flex items-center justify-center p-0 overflow-hidden">
+                  {/* Image Block - 1:1 ASPECT RATIO */}
+                  <div className="relative w-full aspect-square bg-[#f8fafc] border-b border-slate-50 flex items-center justify-center p-0 overflow-hidden">
                     {(card.posterOverride || product?.image) ? (
                       <img 
                         src={card.posterOverride || product?.image} 
