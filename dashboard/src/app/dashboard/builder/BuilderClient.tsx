@@ -252,21 +252,21 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
             <Button variant="link" className="p-0 h-auto text-slate-400 hover:text-slate-700 mb-2" onClick={() => setViewMode("LIST")}>
               &larr; Back to List
             </Button>
-            <h1 className="text-3xl font-sans font-bold tracking-tight text-slate-900">
+            <h1 className="text-2xl md:text-3xl font-sans font-bold tracking-tight text-slate-900">
               {section.id ? "Edit Promo" : "Create Promo"}
             </h1>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 md:gap-3 hidden lg:flex">
             <Button 
               variant="secondary" 
-              className="shadow-sm rounded-xl px-6"
+              className="shadow-sm rounded-xl px-4 md:px-6"
               onClick={() => handleSave(false)}
               disabled={isSaving}
             >
               Save Draft
             </Button>
             <Button 
-              className="shadow-md rounded-xl px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+              className="shadow-md rounded-xl px-4 md:px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
               onClick={() => handleSave(true)}
               disabled={isSaving}
             >
@@ -607,7 +607,7 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
             <p className="text-slate-600 max-w-xl mx-auto leading-relaxed text-lg font-normal">{section.description}</p>
           </div>
  
-          <div className="flex flex-col gap-10 max-w-[400px] mx-auto">
+          <div className="flex flex-col gap-10 max-w-[400px] w-full mx-auto">
             {cards.map(card => {
               const product = availableProducts.find((p: any) => p.id === card.productId)
               
@@ -711,6 +711,26 @@ export default function BuilderClient({ sites }: { sites: any[] }) {
         </div>
       </div>
 
+      {/* MOBILE STICKY ACTIONS */}
+      {viewMode === "EDIT" && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-slate-200 z-[50] flex gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+          <Button 
+            variant="secondary" 
+            className="flex-1 rounded-xl h-12 font-bold"
+            onClick={() => handleSave(false)}
+            disabled={isSaving}
+          >
+            Save Draft
+          </Button>
+          <Button 
+            className="flex-1 rounded-xl h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20"
+            onClick={() => handleSave(true)}
+            disabled={isSaving}
+          >
+            Publish Now
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
