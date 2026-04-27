@@ -18,84 +18,143 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import ProductFilters from "./ProductFilters"
 
-export default async function ProductsPage() {
+interface ProductsPageProps {
+  searchParams: Promise<{
+    page?: string;
+    siteId?: string;
+  }>;
+}
+
+export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const session = await getServerSession(authOptions)
   
   if (!session || !session.user) {
     redirect("/api/auth/signin")
   }
 
-  // Fetch synced products respecting role
-  const products = await prisma.product.findMany({
-    where: session.user.role === "ADMIN" ? undefined : { site: { userId: session.user.id } },
-    include: { site: true },
-    orderBy: { createdAt: "desc" },
-  })
+  const { page: pageStr, siteId } = await searchParams;
+  const page = Math.max(1, parseInt(pageStr || "1"));
+  const pageSize = 20;
+  const skip = (page - 1) * pageSize;
+
+  const where = {
+    ...(siteId ? { siteId } : {}),
+    ...(session.user.role === "ADMIN" ? {} : { site: { userId: session.user.id } }),
+  };
+
+  // Fetch data in parallel
+  const [products, totalCount, sites] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: { site: true },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: pageSize,
+    }),
+    prisma.product.count({ where }),
+    prisma.site.findMany({
+      where: session.user.role === "ADMIN" ? {} : { userId: session.user.id },
+      select: { id: true, domain: true },
+      orderBy: { domain: "asc" },
+    }),
+  ]);
+
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <div className="flex flex-col gap-10">
-      <div className="pb-2 border-b">
-        <h1 className="text-4xl font-sans font-bold tracking-tight text-slate-900">Product Catalog</h1>
-        <p className="text-muted-foreground mt-1">
-          View simple products synced from connected WooCommerce sites.
-        </p>
+      <div className="pb-2 border-b flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-sans font-bold tracking-tight text-slate-900">Product Catalog</h1>
+          <p className="text-muted-foreground mt-1">
+            View simple products synced from connected WooCommerce sites.
+          </p>
+        </div>
       </div>
 
-      <Card className="shadow-sm border-slate-200/60 rounded-2xl overflow-hidden">
-        <CardHeader className="bg-slate-50/50 pb-4 border-b border-slate-100">
-          <CardTitle className="text-lg font-sans">Synced Products</CardTitle>
-          <CardDescription>
-            These products are available to be added to your promo sections.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-slate-100 hover:bg-transparent">
-                <TableHead className="font-semibold text-slate-600">Image</TableHead>
-                <TableHead className="font-semibold text-slate-600">Name</TableHead>
-                <TableHead className="font-semibold text-slate-600">SKU</TableHead>
-                <TableHead className="font-semibold text-slate-600">Price</TableHead>
-                <TableHead className="font-semibold text-slate-600">Stock Status</TableHead>
-                <TableHead className="font-semibold text-slate-600">Source Site</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    No products synced yet. Go to your WordPress plugin to run a manual sync.
-                  </TableCell>
+      <div className="flex flex-col gap-6">
+        <ProductFilters 
+          sites={sites} 
+          currentSiteId={siteId || ""} 
+          currentPage={page} 
+          totalPages={totalPages}
+          totalCount={totalCount}
+        />
+
+        <Card className="shadow-sm border-slate-200/60 rounded-2xl overflow-hidden">
+          <CardHeader className="bg-slate-50/50 pb-4 border-b border-slate-100">
+            <CardTitle className="text-lg font-sans">Synced Products</CardTitle>
+            <CardDescription>
+              {totalCount > 0 
+                ? `Showing ${skip + 1} to ${Math.min(skip + pageSize, totalCount)} of ${totalCount} products`
+                : "These products are available to be added to your promo sections."
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-slate-100 hover:bg-transparent">
+                  <TableHead className="font-semibold text-slate-600 w-[80px]">Image</TableHead>
+                  <TableHead className="font-semibold text-slate-600">Name</TableHead>
+                  <TableHead className="font-semibold text-slate-600">SKU</TableHead>
+                  <TableHead className="font-semibold text-slate-600">Price</TableHead>
+                  <TableHead className="font-semibold text-slate-600">Stock Status</TableHead>
+                  <TableHead className="font-semibold text-slate-600">Source Site</TableHead>
                 </TableRow>
-              ) : (
-                products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      {product.image ? (
-                        <img src={product.image} alt={product.name} className="h-10 w-10 rounded object-cover" />
-                      ) : (
-                        <div className="h-10 w-10 rounded bg-slate-100" />
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>{product.sku || "-"}</TableCell>
-                    <TableCell>{product.price ? `RM ${product.price}` : "-"}</TableCell>
-                    <TableCell>
-                      <Badge variant={product.stockStatus === "instock" ? "default" : "secondary"}>
-                        {product.stockStatus === "instock" ? "In Stock" : "Out of Stock"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {product.site.domain}
+              </TableHeader>
+              <TableBody>
+                {products.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
+                      <div className="flex flex-col items-center gap-2">
+                        <p>No products found.</p>
+                        {siteId && <p className="text-sm">Try clearing your filters or syncing more products.</p>}
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                ) : (
+                  products.map((product) => (
+                    <TableRow key={product.id} className="hover:bg-slate-50/50 transition-colors">
+                      <TableCell>
+                        {product.image ? (
+                          <img src={product.image} alt={product.name} className="h-12 w-12 rounded-lg object-cover shadow-sm border border-slate-100" />
+                        ) : (
+                          <div className="h-12 w-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-medium">
+                            No Img
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium text-slate-900">{product.name}</TableCell>
+                      <TableCell className="font-mono text-xs text-slate-500">{product.sku || "-"}</TableCell>
+                      <TableCell className="font-semibold">
+                        {product.activePrice ? `RM ${parseFloat(product.activePrice).toFixed(2)}` : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="outline" 
+                          className={
+                            product.stockStatus === "instock" 
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-100" 
+                              : "bg-rose-50 text-rose-700 border-rose-100"
+                          }
+                        >
+                          {product.stockStatus === "instock" ? "In Stock" : "Out of Stock"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-500">
+                        {product.site.domain}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
