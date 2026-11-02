@@ -1,16 +1,15 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import crypto from "crypto"
 import { logAudit } from "@/lib/logger"
 import { revalidatePath } from "next/cache"
+import { getActiveUser, getAuthorizedSite } from "@/lib/authorization"
 
 export async function generateConnectionKey() {
-  const session = await getServerSession(authOptions)
+  const user = await getActiveUser()
   
-  if (!session || !session.user) {
+  if (!user) {
     return { error: "Unauthorized" }
   }
 
@@ -26,31 +25,35 @@ export async function generateConnectionKey() {
         connectionKeyHash,
         connectionKeyExpiresAt: expiresAt,
         status: "PENDING",
-        userId: session.user.id,
+        userId: user.id,
       },
     })
 
     await logAudit({
       action: "CONNECTION_KEY_GENERATED",
-      userId: session.user.id,
+      userId: user.id,
       siteId: site.id
     });
 
     return { success: true, connectionKey, siteId: site.id }
-  } catch (error: any) {
+  } catch {
     return { error: "Failed to generate key" }
   }
 }
 
 export async function deleteSite(siteId: string) {
-  const session = await getServerSession(authOptions)
-  
-  if (!session || !session.user) {
+  const { user, site } = await getAuthorizedSite(siteId)
+
+  if (!user) {
     return { error: "Unauthorized" }
   }
 
+  if (!site) {
+    return { error: "Site not found or access denied" }
+  }
+
   try {
-    const siteIdToSafeDelete = siteId;
+    const siteIdToSafeDelete = site.id;
 
     // Manual cleanup for relations to avoid FK constraint issues if DB is out of sync with Prisma
     await prisma.$transaction([
@@ -62,15 +65,15 @@ export async function deleteSite(siteId: string) {
 
     await logAudit({
       action: "SITE_DELETED",
-      userId: session.user.id,
+      userId: user.id,
       siteId: siteIdToSafeDelete
     });
 
     revalidatePath("/dashboard/sites");
 
     return { success: true }
-  } catch (error: any) {
+  } catch (error) {
     console.error("[deleteSite Action Error]:", error)
-    return { error: `Failed to delete site: ${error.message || "Unknown error"}` }
+    return { error: "Failed to delete site" }
   }
 }

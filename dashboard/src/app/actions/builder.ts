@@ -1,163 +1,173 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { logAudit } from "@/lib/logger"
+import { getAuthorizedSite } from "@/lib/authorization"
+import { boundedString, optionalPublicHttpsUrl } from "@/lib/validation"
 
-export async function savePromoConfig(siteId: string, config: any, publish: boolean) {
-  const session = await getServerSession(authOptions)
-  
-  if (!session || !session.user) {
+type PromoCardInput = {
+  productId?: unknown
+  cardTitle?: unknown
+  topLabel?: unknown
+  promoChip?: unknown
+  miniOfferText?: unknown
+  posterOverride?: unknown
+  priceOverride?: unknown
+  regularPriceOverride?: unknown
+  featureList?: unknown
+  buttonText?: unknown
+  visible?: unknown
+}
+
+type PromoConfigInput = {
+  slotKey?: unknown
+  labelText?: unknown
+  titleLine1?: unknown
+  titleLine2?: unknown
+  description?: unknown
+  theme?: unknown
+  cards?: unknown
+}
+
+export async function savePromoConfig(siteId: string, config: PromoConfigInput, publish: boolean) {
+  const { user, site } = await getAuthorizedSite(siteId)
+
+  if (!user) {
     return { error: "Unauthorized" }
   }
 
-  // Verify site belongs to user if they are STAFF
-  if (session.user.role === "STAFF") {
-    const site = await prisma.site.findFirst({
-      where: { id: siteId, userId: session.user.id }
-    })
-    if (!site) return { error: "Unauthorized access to this site" }
+  if (!site) {
+    return { error: "Site not found or access denied" }
+  }
+
+  const slotKey = typeof config.slotKey === "string" ? config.slotKey.trim().toLowerCase() : ""
+  const cards = Array.isArray(config.cards) ? config.cards as PromoCardInput[] : []
+
+  if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(slotKey)) {
+    return { error: "Slot key must contain only lowercase letters, numbers, and hyphens." }
+  }
+
+  if (cards.length > 50) {
+    return { error: "A promo section cannot contain more than 50 cards." }
   }
 
   try {
     const status = publish ? "PUBLISHED" : "DRAFT"
 
-    // Process section
-    const section = await prisma.promoSection.upsert({
+    const productIds = [...new Set(cards
+      .map((card) => typeof card.productId === "string" ? card.productId : "")
+      .filter(Boolean))]
+
+    const matchingProducts = await prisma.product.count({
       where: {
-        siteId_slotKey: {
-          siteId,
-          slotKey: config.slotKey,
-        }
+        id: { in: productIds },
+        siteId: site.id,
       },
-      update: {
-        labelText: config.labelText,
-        titleLine1: config.titleLine1,
-        titleLine2: config.titleLine2,
-        description: config.description,
-        themeVariant: config.theme,
-        status: status,
-      },
-      create: {
-        siteId,
-        slotKey: config.slotKey,
-        labelText: config.labelText,
-        titleLine1: config.titleLine1,
-        titleLine2: config.titleLine2,
-        description: config.description,
-        themeVariant: config.theme,
-        status: status,
-      }
     })
 
-    // Process cards
-    // First, delete existing cards for this section to cleanly re-insert (MVP simple array sync)
-    await prisma.productCard.deleteMany({
-      where: { promoSectionId: section.id }
-    })
+    if (matchingProducts !== productIds.length) {
+      return { error: "One or more selected products do not belong to this site." }
+    }
 
-    // Recreate cards with new ordering and data
-    for (let i = 0; i < config.cards.length; i++) {
-      const card = config.cards[i]
-      if (!card.productId) continue; // Skip unlinked cards to prevent DB errors
-      
-      await prisma.productCard.create({
-        data: {
-          promoSectionId: section.id,
-          productId: card.productId,
-          cardTitle: card.cardTitle,
-          topLabel: card.topLabel,
-          promoChip: card.promoChip,
-          miniOfferText: card.miniOfferText,
-          posterOverride: card.posterOverride,
-          priceOverride: card.priceOverride,
-          regularPriceOverride: card.regularPriceOverride,
-          featureList: card.featureList,
-          buttonText: card.buttonText,
-          visible: card.visible,
-          sortOrder: i,
+    await prisma.$transaction(async (tx) => {
+      const section = await tx.promoSection.upsert({
+        where: {
+          siteId_slotKey: {
+            siteId: site.id,
+            slotKey,
+          }
+        },
+        update: {
+          labelText: boundedString(config.labelText, 120),
+          titleLine1: boundedString(config.titleLine1, 160),
+          titleLine2: boundedString(config.titleLine2, 160),
+          description: boundedString(config.description, 1000),
+          themeVariant: boundedString(config.theme, 32, "gold") || "gold",
+          status,
+        },
+        create: {
+          siteId: site.id,
+          slotKey,
+          labelText: boundedString(config.labelText, 120),
+          titleLine1: boundedString(config.titleLine1, 160),
+          titleLine2: boundedString(config.titleLine2, 160),
+          description: boundedString(config.description, 1000),
+          themeVariant: boundedString(config.theme, 32, "gold") || "gold",
+          status,
         }
       })
-    }
 
-    if (publish) {
-      try {
-        const site = await prisma.site.findUnique({ where: { id: siteId } });
-        if (site && site.domain && site.siteTokenHash) {
-          // Normalize domain just in case
-          const domain = site.domain.replace(/\/+$/, '');
-          await fetch(`${domain}/wp-json/ds-flow/v1/webhook`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${site.siteTokenHash}`
-            },
-            body: JSON.stringify({ action: 'clear_config_cache' })
-          }).catch(e => console.error("Webhook trigger failed passively:", e));
-        }
-      } catch (e) {
-        console.error("Failed to trigger webhook", e);
+      await tx.productCard.deleteMany({
+        where: { promoSectionId: section.id }
+      })
+
+      if (cards.length > 0) {
+        await tx.productCard.createMany({
+          data: cards.flatMap((card, sortOrder) => {
+            const productId = typeof card.productId === "string" ? card.productId : ""
+            if (!productId) return []
+
+            const posterOverride = optionalPublicHttpsUrl(card.posterOverride)
+            return [{
+              promoSectionId: section.id,
+              productId,
+              cardTitle: boundedString(card.cardTitle, 160),
+              topLabel: boundedString(card.topLabel, 80),
+              promoChip: boundedString(card.promoChip, 80),
+              miniOfferText: boundedString(card.miniOfferText, 160),
+              posterOverride,
+              priceOverride: boundedString(card.priceOverride, 32),
+              regularPriceOverride: boundedString(card.regularPriceOverride, 32),
+              featureList: boundedString(card.featureList, 2000, "") || "",
+              buttonText: boundedString(card.buttonText, 80, "Beli Sekarang"),
+              visible: typeof card.visible === "boolean" ? card.visible : true,
+              sortOrder,
+            }]
+          }),
+        })
       }
-    }
+    })
 
     await logAudit({
       action: publish ? "PROMO_PUBLISHED" : "PROMO_DRAFT_SAVED",
-      userId: session.user.id,
-      siteId: siteId,
-      details: { slotKey: config.slotKey, cardsCount: config.cards.length }
+      userId: user.id,
+      siteId: site.id,
+      details: { slotKey, cardsCount: cards.length }
     });
 
     return { success: true, message: publish ? "Config published successfully!" : "Draft saved successfully!" }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error saving config:", error)
-    return { error: error.message || "Internal Server Error" }
+    return { error: "Internal Server Error" }
   }
 }
 
 export async function deletePromoConfig(siteId: string, sectionId: string) {
-  const session = await getServerSession(authOptions)
-  
-  if (!session || !session.user) {
+  const { user, site } = await getAuthorizedSite(siteId)
+
+  if (!user) {
     return { error: "Unauthorized" }
   }
 
-  if (session.user.role === "STAFF") {
-    const site = await prisma.site.findFirst({
-      where: { id: siteId, userId: session.user.id }
-    })
-    if (!site) return { error: "Unauthorized access to this site" }
+  if (!site) {
+    return { error: "Site not found or access denied" }
   }
 
   try {
     // Delete the section (Cascade will delete cards)
     await prisma.promoSection.delete({
-      where: { id: sectionId, siteId: siteId }
+      where: { id: sectionId, siteId: site.id }
     })
-
-    // Ping webhook to clear cache
-    const site = await prisma.site.findUnique({ where: { id: siteId } });
-    if (site && site.domain && site.siteTokenHash) {
-      const domain = site.domain.replace(/\/+$/, '');
-      await fetch(`${domain}/wp-json/ds-flow/v1/webhook`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${site.siteTokenHash}`
-        },
-        body: JSON.stringify({ action: 'clear_config_cache' })
-      }).catch(() => {});
-    }
 
     await logAudit({
       action: "PROMO_DELETED",
-      userId: session.user.id,
-      siteId: siteId,
+      userId: user.id,
+      siteId: site.id,
       details: { sectionId }
     });
 
     return { success: true, message: "Promo section deleted successfully" }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error deleting config:", error)
     return { error: "Internal Server Error" }
   }

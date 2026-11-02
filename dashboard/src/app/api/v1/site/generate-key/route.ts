@@ -1,13 +1,12 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import { getActiveUser } from "@/lib/authorization";
 
-export async function POST(req: Request) {
+export async function POST() {
   try {
-    const session = await getServerSession(authOptions);
+    const user = await getActiveUser();
 
-    if (!session || !session.user) {
+    if (!user) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -24,7 +23,7 @@ export async function POST(req: Request) {
         connectionKeyHash,
         connectionKeyExpiresAt: expiresAt,
         status: "PENDING",
-        userId: session.user.id,
+        userId: user.id,
       },
     });
 

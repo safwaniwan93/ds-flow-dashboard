@@ -1,21 +1,20 @@
 import { prisma } from "@/lib/prisma"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import BuilderClient from "./BuilderClient"
+import { getActiveUser } from "@/lib/authorization"
 
 export default async function BuilderPage() {
-  const session = await getServerSession(authOptions)
+  const user = await getActiveUser()
   
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/api/auth/signin")
   }
 
   // Fetch sites connected by this user
   const sites = await prisma.site.findMany({
-    where: session.user.role === "ADMIN" 
-      ? { status: "CONNECTED" } 
-      : { userId: session.user.id, status: "CONNECTED" },
+    where: user.role === "ADMIN"
+      ? { status: "CONNECTED" }
+      : { userId: user.id, status: "CONNECTED" },
     include: {
       products: true,
       promoSections: {

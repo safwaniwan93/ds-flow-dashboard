@@ -20,36 +20,6 @@ class DS_Flow_Sync {
         }
         add_action( 'ds_flow_scheduled_config_refresh', array( $this, 'fetch_config' ) );
 
-        // Webhook for instant cache clear
-        add_action( 'rest_api_init', array( $this, 'register_webhook' ) );
-    }
-
-    public function register_webhook() {
-        register_rest_route( 'ds-flow/v1', '/webhook', array(
-            'methods' => 'POST',
-            'callback' => array( $this, 'handle_webhook' ),
-            'permission_callback' => '__return_true'
-        ) );
-    }
-
-    public function handle_webhook( WP_REST_Request $request ) {
-        $auth_header = $request->get_header('authorization');
-        $site_token = get_option( 'ds_flow_site_token' );
-        $provided_hash = str_replace('Bearer ', '', $auth_header);
-        
-        if ( ! $site_token || ! $auth_header || hash('sha256', $site_token) !== $provided_hash ) {
-            return new WP_Error( 'unauthorized', 'Invalid or missing token', array( 'status' => 401 ) );
-        }
-
-        $body = $request->get_json_params();
-        if ( isset($body['action']) && $body['action'] === 'clear_config_cache' ) {
-            delete_transient( 'ds_flow_config' );
-            // Optionally auto-fetch here, or let the next page load fetch it
-            $this->fetch_config();
-            return new WP_REST_Response( array( 'success' => true, 'message' => 'Cache cleared and config refetched.' ), 200 );
-        }
-
-        return new WP_REST_Response( array( 'success' => false, 'message' => 'Unknown action' ), 400 );
     }
 
     public function fetch_config() {
@@ -136,20 +106,23 @@ class DS_Flow_Sync {
         if ( empty( $payload ) ) return true; // Nothing to sync
 
         $api_base_url = get_option('ds_flow_api_base_url', 'https://ds-flow-dashboard.vercel.app/api/v1');
-        $response = wp_remote_post( $api_base_url . '/site/sync/products', array( // Dashboard endpoint (needs implementation in phase 3)
-            'headers' => array(
-                'Authorization' => 'Bearer ' . $site_token,
-                'Content-Type'  => 'application/json',
-            ),
-            'body'    => wp_json_encode( array( 'products' => $payload ) ),
-            'timeout' => 30,
-        ) );
+        foreach ( array_chunk( $payload, 200 ) as $batch ) {
+            $response = wp_remote_post( $api_base_url . '/site/sync/products', array(
+                'headers' => array(
+                    'Authorization' => 'Bearer ' . $site_token,
+                    'Content-Type'  => 'application/json',
+                ),
+                'body'    => wp_json_encode( array( 'products' => $batch ) ),
+                'timeout' => 30,
+            ) );
 
-        if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
-            update_option( 'ds_flow_last_sync', current_time( 'mysql' ) );
-            return true;
+            if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
+                return false;
+            }
         }
-        return false;
+
+        update_option( 'ds_flow_last_sync', current_time( 'mysql' ) );
+        return true;
     }
 
     public function manual_sync_products() {

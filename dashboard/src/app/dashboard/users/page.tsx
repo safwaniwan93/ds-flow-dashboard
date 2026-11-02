@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import { getActiveUser } from "@/lib/authorization"
 import {
   Card,
   CardContent,
@@ -23,9 +22,9 @@ import UserForm from "./UserForm"
 import UserActions from "./UserActions"
 
 export default async function UsersPage() {
-  const session = await getServerSession(authOptions)
+  const currentUser = await getActiveUser()
   
-  if (!session || session.user.role !== "ADMIN") {
+  if (!currentUser || currentUser.role !== "ADMIN") {
     redirect("/dashboard/sites")
   }
 
@@ -112,7 +111,7 @@ export default async function UsersPage() {
                          </div>
                       </TableCell>
                       <TableCell className="px-8 text-right">
-                        <UserActions userId={user.id} isActive={user.isActive} currentUserId={session.user.id} />
+                        <UserActions userId={user.id} isActive={user.isActive} currentUserId={currentUser.id} />
                       </TableCell>
                     </TableRow>
                   ))}

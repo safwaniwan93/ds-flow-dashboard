@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import { getActiveUser } from "@/lib/authorization"
 import {
   Card,
   CardContent,
@@ -28,9 +27,9 @@ interface ProductsPageProps {
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  const session = await getServerSession(authOptions)
+  const user = await getActiveUser()
   
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/api/auth/signin")
   }
 
@@ -41,7 +40,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   const where = {
     ...(siteId ? { siteId } : {}),
-    ...(session.user.role === "ADMIN" ? {} : { site: { userId: session.user.id } }),
+    ...(user.role === "ADMIN" ? {} : { site: { userId: user.id } }),
   };
 
   // Fetch data in parallel
@@ -55,7 +54,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     }),
     prisma.product.count({ where }),
     prisma.site.findMany({
-      where: session.user.role === "ADMIN" ? {} : { userId: session.user.id },
+      where: user.role === "ADMIN" ? {} : { userId: user.id },
       select: { id: true, domain: true },
       orderBy: { domain: "asc" },
     }),

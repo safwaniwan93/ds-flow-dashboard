@@ -3,11 +3,12 @@ import crypto from "crypto";
 import { headers } from "next/headers";
 import { rateLimit } from "@/lib/rate-limit";
 import { logAudit } from "@/lib/logger";
+import { normalizePublicSiteUrl } from "@/lib/validation";
 
 export async function POST(req: Request) {
   try {
     const headerList = await headers();
-    const ip = headerList.get("x-forwarded-for") || "unknown";
+    const ip = (headerList.get("x-forwarded-for")?.split(",")[0] || "unknown").trim().slice(0, 64);
     
     // Rate limit: 5 attempts per 15 minutes for site connection
     const limiter = await rateLimit(ip, "site_connect", 5, 15 * 60 * 1000);
@@ -15,10 +16,16 @@ export async function POST(req: Request) {
       return Response.json({ error: "Too many attempts. Please try again later." }, { status: 429 });
     }
 
+    const contentLength = Number(req.headers.get("content-length") || 0);
+    if (contentLength > 8192) {
+      return Response.json({ error: "Request body is too large" }, { status: 413 });
+    }
+
     const body = await req.json();
     const { connectionKey, domain } = body;
 
-    if (!connectionKey || !domain) {
+    const normalizedDomain = normalizePublicSiteUrl(domain);
+    if (typeof connectionKey !== "string" || !/^[a-f0-9]{64}$/i.test(connectionKey) || !normalizedDomain) {
       return Response.json({ error: "Missing connectionKey or domain" }, { status: 400 });
     }
 
@@ -46,7 +53,7 @@ export async function POST(req: Request) {
     // Check if domain is already connected
     const existingDomain = await prisma.site.findFirst({
       where: {
-        domain: domain,
+        domain: normalizedDomain,
         status: "CONNECTED",
       },
     });
@@ -63,7 +70,7 @@ export async function POST(req: Request) {
     const updatedSite = await prisma.site.update({
       where: { id: site.id },
       data: {
-        domain,
+        domain: normalizedDomain,
         siteTokenHash,
         connectionKeyUsedAt: new Date(),
         status: "CONNECTED",
@@ -97,7 +104,7 @@ export async function POST(req: Request) {
     await logAudit({
       action: "SITE_CONNECTED",
       siteId: updatedSite.id,
-      details: { domain }
+      details: { domain: normalizedDomain }
     });
 
     return Response.json({ siteToken, message: "Site connected successfully" });

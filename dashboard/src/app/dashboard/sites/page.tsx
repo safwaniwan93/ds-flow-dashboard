@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import { getActiveUser } from "@/lib/authorization"
 import {
   Card,
   CardContent,
@@ -23,15 +22,15 @@ import ConnectionManager from "./ConnectionManager"
 import SiteActions from "./SiteActions"
 
 export default async function SitesPage() {
-  const session = await getServerSession(authOptions)
+  const user = await getActiveUser()
   
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/api/auth/signin")
   }
 
   // Fetch sites from DB respecting role
   const sites = await prisma.site.findMany({
-    where: session.user.role === "ADMIN" ? undefined : { userId: session.user.id },
+    where: user.role === "ADMIN" ? undefined : { userId: user.id },
     orderBy: { createdAt: "desc" },
     include: {
       _count: {
