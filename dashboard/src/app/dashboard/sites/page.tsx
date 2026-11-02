@@ -28,16 +28,27 @@ export default async function SitesPage() {
     redirect("/api/auth/signin")
   }
 
-  // Fetch sites from DB respecting role
-  const sites = await prisma.site.findMany({
-    where: user.role === "ADMIN" ? undefined : { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: {
-        select: { products: true, promoSections: true }
+  const [sites, activeUsers] = await Promise.all([
+    prisma.site.findMany({
+      where: user.role === "ADMIN" ? undefined : { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: { id: true, email: true },
+        },
+        _count: {
+          select: { products: true, promoSections: true }
+        }
       }
-    }
-  })
+    }),
+    user.role === "ADMIN"
+      ? prisma.user.findMany({
+          where: { isActive: true },
+          select: { id: true, email: true },
+          orderBy: { email: "asc" },
+        })
+      : Promise.resolve([]),
+  ])
 
   const connectedSitesCount = sites.filter(s => s.status === "CONNECTED").length
   const totalProducts = sites.reduce((acc, s) => acc + s._count.products, 0)
@@ -113,6 +124,7 @@ export default async function SitesPage() {
               <TableRow className="border-slate-100 hover:bg-transparent bg-slate-50/30">
                 <TableHead className="px-8 font-bold text-slate-500 text-xs uppercase tracking-widest">Domain & ID</TableHead>
                 <TableHead className="font-bold text-slate-500 text-xs uppercase tracking-widest">Status</TableHead>
+                <TableHead className="font-bold text-slate-500 text-xs uppercase tracking-widest">Owner</TableHead>
                 <TableHead className="font-bold text-slate-500 text-xs uppercase tracking-widest text-center">Stats</TableHead>
                 <TableHead className="font-bold text-slate-500 text-xs uppercase tracking-widest">Last Sync</TableHead>
                 <TableHead className="px-8 text-right font-bold text-slate-500 text-xs uppercase tracking-widest">Management</TableHead>
@@ -121,7 +133,7 @@ export default async function SitesPage() {
             <TableBody>
               {sites.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-64 text-center">
+                  <TableCell colSpan={6} className="h-64 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center">
                         <Globe className="w-10 h-10 text-slate-300" />
@@ -143,6 +155,11 @@ export default async function SitesPage() {
                         </span>
                         <span className="text-xs font-mono text-slate-400">ID: {site.id}</span>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm font-medium text-slate-600">
+                        {site.user?.email || "Unassigned"}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge 
@@ -175,7 +192,12 @@ export default async function SitesPage() {
                       </span>
                     </TableCell>
                     <TableCell className="px-8 text-right">
-                      <SiteActions siteId={site.id} domain={site.domain} />
+                      <SiteActions
+                        siteId={site.id}
+                        domain={site.domain}
+                        currentOwnerId={site.userId}
+                        availableUsers={user.role === "ADMIN" ? activeUsers : undefined}
+                      />
                     </TableCell>
                   </TableRow>
                 ))

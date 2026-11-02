@@ -5,14 +5,30 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { deleteSite } from "@/app/actions/sites"
-import { ExternalLink, MoreVertical, Settings, Trash2 } from "lucide-react"
+import { deleteSite, transferSiteOwnership } from "@/app/actions/sites"
+import { ArrowRightLeft, ExternalLink, MoreVertical, Settings, Trash2 } from "lucide-react"
 import Link from "next/link"
 
-export default function SiteActions({ siteId, domain }: { siteId: string; domain: string | null }) {
+type TransferUser = {
+  id: string
+  email: string
+}
+
+type SiteActionsProps = {
+  siteId: string
+  domain: string | null
+  currentOwnerId: string | null
+  availableUsers?: TransferUser[]
+}
+
+export default function SiteActions({ siteId, domain, currentOwnerId, availableUsers = [] }: SiteActionsProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
+  const [showTransfer, setShowTransfer] = useState(false)
+  const [targetUserId, setTargetUserId] = useState("")
+
+  const transferTargets = availableUsers.filter((user) => user.id !== currentOwnerId)
 
   async function handleDelete() {
     try {
@@ -24,7 +40,27 @@ export default function SiteActions({ siteId, domain }: { siteId: string; domain
       } else {
         alert(res.error || "Failed to disconnect site")
       }
-    } catch (err) {
+    } catch {
+      alert("An unexpected error occurred")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleTransfer() {
+    if (!targetUserId) return
+
+    try {
+      setLoading(true)
+      const res = await transferSiteOwnership(siteId, targetUserId)
+      if (res.success) {
+        setShowTransfer(false)
+        setTargetUserId("")
+        router.refresh()
+      } else {
+        alert(res.error || "Failed to transfer site ownership")
+      }
+    } catch {
       alert("An unexpected error occurred")
     } finally {
       setLoading(false)
@@ -55,6 +91,15 @@ export default function SiteActions({ siteId, domain }: { siteId: string; domain
                   Visit Site
                 </a>
               } />
+            )}
+            {transferTargets.length > 0 && (
+              <DropdownMenuItem
+                onClick={() => setShowTransfer(true)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <ArrowRightLeft className="w-4 h-4" />
+                Transfer Ownership
+              </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem 
@@ -87,6 +132,53 @@ export default function SiteActions({ siteId, domain }: { siteId: string; domain
               className="rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold px-8 py-6 shadow-lg shadow-red-200/50 transition-all active:scale-95"
             >
               {loading ? "Disconnecting..." : "Disconnect"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTransfer} onOpenChange={setShowTransfer}>
+        <DialogContent className="rounded-xl border-slate-200">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Transfer Site Ownership</DialogTitle>
+            <DialogDescription className="text-slate-600 font-medium leading-relaxed">
+              The new owner will receive access to this site, its products, and promo configurations. The WordPress connection will remain active.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2">
+            <label htmlFor={`owner-${siteId}`} className="text-sm font-semibold text-slate-700">
+              New owner
+            </label>
+            <select
+              id={`owner-${siteId}`}
+              value={targetUserId}
+              onChange={(event) => setTargetUserId(event.target.value)}
+              disabled={loading}
+              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="">Select an active user</option>
+              {transferTargets.map((user) => (
+                <option key={user.id} value={user.id}>{user.email}</option>
+              ))}
+            </select>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setShowTransfer(false)}
+              disabled={loading}
+              className="rounded-lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleTransfer}
+              disabled={loading || !targetUserId}
+              className="rounded-lg px-6 font-bold"
+            >
+              {loading ? "Transferring..." : "Transfer Ownership"}
             </Button>
           </DialogFooter>
         </DialogContent>
